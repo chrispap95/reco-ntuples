@@ -2152,15 +2152,9 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &fraction, const 
     wafer = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
     cell = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
   }
-  const double cellThickness =
-      ((detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) ? recHitTools_.getSiThickness(detid)
-                                            : std::numeric_limits<std::float_t>::max());
   const bool isHalfCell = recHitTools_.isHalfCell(detid);
   const double eta = recHitTools_.getEta(position);
   const double phi = recHitTools_.getPhi(position);
-  const double pt = recHitTools_.getPt(position, hit->energy());
-  const double radius =
-      ((detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) ? recHitTools_.getRadiusToSide(detid) : -1.);
 
   // fill the vectors
   simhit_eta_.push_back(eta);
