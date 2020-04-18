@@ -24,6 +24,7 @@
 #include "Geometry/HGCalGeometry/interface/HGCalGeometry.h"
 #include "Geometry/HcalTowerAlgo/interface/HcalGeometry.h"
 #include "SimDataFormats/CaloAnalysis/interface/CaloParticle.h"
+#include "SimDataFormats/CaloHit/interface/PCaloHit.h"
 #include "SimDataFormats/CaloAnalysis/interface/SimCluster.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 
@@ -69,8 +70,11 @@ class coordinates {
  public:
   coordinates() : x(0), y(0), z(0), eta(100), phi(0) {}
   float x, y, z, eta, phi;
-  inline math::XYZTLorentzVectorD toVector() { return math::XYZTLorentzVectorD(x, y, z, 0); }
+  inline math::XYZTLorentzVectorD toVector() {
+    return math::XYZTLorentzVectorD(x, y, z, 0);
+  }
 };
+
 class simpleTrackPropagator {
  public:
   simpleTrackPropagator(MagneticField const *f)
@@ -192,6 +196,7 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   std::string detector_;
   std::string inputTag_HGCalMultiCluster_;
   bool rawRecHits_;
+  bool rawSimHits_;
   bool verbose_;
 
   // ----------member data ---------------------------
@@ -201,6 +206,10 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   edm::EDGetTokenT<HGCRecHitCollection> recHitsBH_;
   edm::EDGetTokenT<HGCRecHitCollection> recHitsNose_;
   edm::EDGetTokenT<HFRecHitCollection> recHitsHF_;
+
+  edm::EDGetTokenT<std::vector<PCaloHit>> simHitsEE_;
+  edm::EDGetTokenT<std::vector<PCaloHit>> simHitsFH_;
+  edm::EDGetTokenT<std::vector<PCaloHit>> simHitsBH_;
 
   edm::EDGetTokenT<reco::CaloClusterCollection> clusters_;
   edm::EDGetTokenT<std::vector<reco::GenParticle> > genParticles_;
@@ -291,6 +300,24 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   std::vector<int> rechit_flags_;
   std::vector<int> rechit_cluster2d_;
   std::vector<float> rechit_radius_;
+
+  ////////////////////
+  // SimHits
+  // associated to sim clusters
+  std::vector<float> simhit_eta_;
+  std::vector<float> simhit_phi_;
+  std::vector<float> simhit_energy_;
+  std::vector<float> simhit_x_;
+  std::vector<float> simhit_y_;
+  std::vector<float> simhit_z_;
+  std::vector<int> simhit_layer_;
+  std::vector<int> simhit_wafer_u_;
+  std::vector<int> simhit_wafer_v_;
+  std::vector<int> simhit_cell_u_;
+  std::vector<int> simhit_cell_v_;
+  std::vector<unsigned int> simhit_detid_;
+  std::vector<bool> simhit_isHalf_;
+  std::vector<int> simhit_flags_;
 
   ////////////////////
   // layer clusters
@@ -456,15 +483,19 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   //
   unsigned int cluster_index_;
   unsigned int rechit_index_;
+  unsigned int simhit_index_;
   std::map<DetId, const HGCRecHit *> hitmap_;
   std::map<DetId, const HFRecHit *> hfhitmap_;
+  std::map<DetId, const PCaloHit *> simhitmap_;
 
   std::map<DetId, unsigned int> detIdToRecHitIndexMap_;
+  std::map<DetId, unsigned int> detIdToSimHitIndexMap_;
   float vz_;  // primary vertex z position
   // to keep track of the 2d clusters stored within the loop on multiclusters
   std::set<edm::Ptr<reco::BasicCluster>> storedLayerClusters_;
   // to keep track of the RecHits stored within the cluster loops
   std::set<DetId> storedRecHits_;
+  std::set<DetId> storedSimHits_;
   int algo_;
   HGCalDepthPreClusterer pre_;
   hgcal::RecHitTools recHitTools_;
@@ -495,6 +526,7 @@ HGCalAnalysis::HGCalAnalysis(const edm::ParameterSet &iConfig)
       detector_(iConfig.getParameter<std::string>("detector")),
       inputTag_HGCalMultiCluster_(iConfig.getParameter<std::string>("inputTag_HGCalMultiCluster")),
       rawRecHits_(iConfig.getParameter<bool>("rawRecHits")),
+      rawSimHits_(iConfig.getParameter<bool>("rawSimHits")),
       verbose_(iConfig.getParameter<bool>("verbose")),
       particleFilter_(iConfig.getParameter<edm::ParameterSet>("TestParticleFilter")) {
   // now do what ever initialization is needed
@@ -504,21 +536,25 @@ HGCalAnalysis::HGCalAnalysis(const edm::ParameterSet &iConfig)
     recHitsEE_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCEERecHits"));
     recHitsFH_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));
     recHitsBH_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCHEBRecHits"));
+    simHitsEE_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsEE"));
+    simHitsFH_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsHEback"));
+    simHitsBH_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsHEfront"));
     algo_ = 1;
   } else if (detector_ == "EM") {
     recHitsEE_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCEERecHits"));
+    simHitsEE_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsEE"));
     algo_ = 2;
   } else if (detector_ == "HAD") {
     recHitsFH_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCHEFRecHits"));
     recHitsBH_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCHEBRecHits"));
+    simHitsFH_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsHEback"));
+    simHitsBH_ = consumes<std::vector<PCaloHit>>(edm::InputTag("g4SimHits", "HGCHitsHEfront"));
     algo_ = 3;
-  }
-    else if (detector_ == "HFNose") {
+  } else if (detector_ == "HFNose") {
     recHitsNose_ = consumes<HGCRecHitCollection>(edm::InputTag("HGCalRecHit", "HGCHFNoseRecHits"));
     recHitsHF_   = consumes<HFRecHitCollection>(iConfig.getUntrackedParameter<string>("HFRecHits","hfreco"));
     algo_ = 4;
-  }
-    else if (detector_ == "HF") {
+  } else if (detector_ == "HF") {
     recHitsHF_   = consumes<HFRecHitCollection>(iConfig.getUntrackedParameter<string>("HFRecHits","hfreco"));
     algo_ = 5;
   }
@@ -630,6 +666,24 @@ HGCalAnalysis::HGCalAnalysis(const edm::ParameterSet &iConfig)
   t_->Branch("rechit_flags", &rechit_flags_);
   t_->Branch("rechit_cluster2d", &rechit_cluster2d_);
   t_->Branch("rechit_radius", &rechit_radius_);
+
+  ////////////////////
+  // simHits
+  // associated to layer clusters
+  t_->Branch("simhit_eta", &simhit_eta_);
+  t_->Branch("simhit_phi", &simhit_phi_);
+  t_->Branch("simhit_energy", &simhit_energy_);
+  t_->Branch("simhit_x", &simhit_x_);
+  t_->Branch("simhit_y", &simhit_y_);
+  t_->Branch("simhit_z", &simhit_z_);
+  t_->Branch("simhit_layer", &simhit_layer_);
+  t_->Branch("simhit_wafer_u", &simhit_wafer_u_);
+  t_->Branch("simhit_wafer_v", &simhit_wafer_v_);
+  t_->Branch("simhit_cell_u", &simhit_cell_u_);
+  t_->Branch("simhit_cell_v", &simhit_cell_v_);
+  t_->Branch("simhit_detid", &simhit_detid_);
+  t_->Branch("simhit_isHalf", &simhit_isHalf_);
+  t_->Branch("simhit_flags", &simhit_flags_);
 
   ////////////////////
   // layer clusters
@@ -1045,6 +1099,10 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
   Handle<HGCRecHitCollection> recHitHandleNose;
   Handle<HFRecHitCollection>  recHitHandleHF;
 
+  Handle<std::vector<PCaloHit>> simHitHandleEE;
+  Handle<std::vector<PCaloHit>> simHitHandleFH;
+  Handle<std::vector<PCaloHit>> simHitHandleBH;
+
   Handle<reco::CaloClusterCollection> clusterHandle;
 
   iEvent.getByToken(clusters_, clusterHandle);
@@ -1235,9 +1293,10 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
   }
 
   // make a map detid-rechit
+  simhitmap_.clear();
   hitmap_.clear();
   hfhitmap_.clear();
-  
+
   switch (algo_) {
     case 1: {
       iEvent.getByToken(recHitsEE_, recHitHandleEE);
@@ -1255,6 +1314,23 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       for (unsigned int i = 0; i < rechitsBH.size(); ++i) {
         hitmap_[rechitsBH[i].detid()] = &rechitsBH[i];
       }
+
+      iEvent.getByToken(simHitsEE_, simHitHandleEE);
+      iEvent.getByToken(simHitsFH_, simHitHandleFH);
+      iEvent.getByToken(simHitsBH_, simHitHandleBH);
+      const auto &simhitsEE = *simHitHandleEE;
+      const auto &simhitsFH = *simHitHandleFH;
+      const auto &simhitsBH = *simHitHandleBH;
+      for (unsigned int i = 0; i < simhitsEE.size(); ++i) {
+        simhitmap_[simhitsEE[i].detid()] = &simhitsEE[i];
+      }
+      for (unsigned int i = 0; i < simhitsFH.size(); ++i) {
+        simhitmap_[simhitsFH[i].detid()] = &simhitsFH[i];
+      }
+      for (unsigned int i = 0; i < simhitsBH.size(); ++i) {
+        simhitmap_[simhitsBH[i].detid()] = &simhitsBH[i];
+      }
+
       break;
     }
     case 2: {
@@ -1262,6 +1338,12 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       const HGCRecHitCollection &rechitsEE = *recHitHandleEE;
       for (unsigned int i = 0; i < rechitsEE.size(); i++) {
         hitmap_[rechitsEE[i].detid()] = &rechitsEE[i];
+      }
+
+      iEvent.getByToken(simHitsEE_, simHitHandleEE);
+      const auto &simhitsEE = *simHitHandleEE;
+      for (unsigned int i = 0; i < simhitsEE.size(); ++i) {
+        simhitmap_[simhitsEE[i].detid()] = &simhitsEE[i];
       }
       break;
     }
@@ -1275,6 +1357,17 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       }
       for (unsigned int i = 0; i < rechitsBH.size(); i++) {
         hitmap_[rechitsBH[i].detid()] = &rechitsBH[i];
+      }
+
+      iEvent.getByToken(simHitsFH_, simHitHandleFH);
+      iEvent.getByToken(simHitsBH_, simHitHandleBH);
+      const auto &simhitsFH = *simHitHandleFH;
+      const auto &simhitsBH = *simHitHandleBH;
+      for (unsigned int i = 0; i < simhitsFH.size(); ++i) {
+        simhitmap_[simhitsFH[i].detid()] = &simhitsFH[i];
+      }
+      for (unsigned int i = 0; i < simhitsBH.size(); ++i) {
+        simhitmap_[simhitsBH[i].detid()] = &simhitsBH[i];
       }
       break;
     }
@@ -1404,7 +1497,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         }
       }
 
-      const HFRecHitCollection &rechitsHF = *recHitHandleHF;     
+      const HFRecHitCollection &rechitsHF = *recHitHandleHF;
        // loop over HF RecHits
       for (HFRecHitCollection::const_iterator it_hit = rechitsHF.begin(); it_hit < rechitsHF.end();
            ++it_hit) {
@@ -1417,7 +1510,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
     }
 
     if (algo_ == 5) {
-      const HFRecHitCollection &rechitsHF = *recHitHandleHF;     
+      const HFRecHitCollection &rechitsHF = *recHitHandleHF;
        // loop over HF RecHits
       for (HFRecHitCollection::const_iterator it_hit = rechitsHF.begin(); it_hit < rechitsHF.end();
            ++it_hit) {
@@ -1428,6 +1521,47 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         }
       }
      }
+  }
+
+  // Fill remaining SimHits
+  if (rawSimHits_) {
+    if (algo_ < 3) {
+      const std::vector<PCaloHit> &simhitsEE = *simHitHandleEE;
+      // loop over EE SimHits
+      for (std::vector<PCaloHit>::const_iterator it_hit = simhitsEE.begin(); it_hit < simhitsEE.end();
+           ++it_hit) {
+        const HGCalDetId detid = it_hit->detid();
+        unsigned int layer = recHitTools_.getLayerWithOffset(detid);
+
+        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
+          fillSimHit(detid, -1, layer);
+        }
+      }
+    }
+    if (algo_ == 1 || algo_ == 3) {
+      const std::vector<PCaloHit> &simhitsFH = *simHitHandleFH;
+      // loop over FH SimHits
+      for (std::vector<PCaloHit>::const_iterator it_hit = simhitsFH.begin(); it_hit < simhitsFH.end();
+           ++it_hit) {
+        const HGCalDetId detid = it_hit->detid();
+        unsigned int layer = recHitTools_.getLayerWithOffset(detid);
+
+        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
+          fillSimHit(detid, -1, layer);
+        }
+      }
+      const std::vector<PCaloHit> &simhitsBH = *simHitHandleBH;
+      // loop over BH SimHits
+      for (std::vector<PCaloHit>::const_iterator it_hit = simhitsBH.begin(); it_hit < simhitsBH.end();
+           ++it_hit) {
+        const HGCalDetId detid = it_hit->detid();
+        unsigned int layer = recHitTools_.getLayerWithOffset(detid);
+
+        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
+          fillSimHit(detid, -1, layer);
+        }
+      }
+    }
   }
 
   if (readGen_) {
@@ -1568,7 +1702,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       }
       pfclusterFromMultiCl_rechits_.push_back(rechits_indices);
     }  // end loop over pfClusters From MultiClusters
-  
+
 
     // Loop over Ecal Driven Gsf Electrons From MultiClusters
     if (storeElectrons_) {
@@ -1961,14 +2095,71 @@ void HGCalAnalysis::fillRecHitHF(const DetId &detid, const float &fraction, cons
   cell  = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
 
   const double cellThickness = std::numeric_limits<std::float_t>::max();
-  
+
   const bool isHalfCell = recHitTools_.isHalfCell(detid);
 
   const double eta = recHitTools_.getEta(position);
   const double phi = recHitTools_.getPhi(position);
   const double pt = recHitTools_.getPt(position, hit->energy());
   const double radius = sqrt(position.x()*position.x() + position.y()*position.y());
-  
+
+  // fill the vectors
+  rechit_eta_.push_back(eta);
+  rechit_phi_.push_back(phi);
+  rechit_pt_.push_back(pt);
+  rechit_energy_.push_back(hit->energy());
+  rechit_layer_.push_back(layer);
+  rechit_wafer_u_.push_back(wafer.first);
+  rechit_wafer_v_.push_back(wafer.second);
+  rechit_cell_u_.push_back(cell.first);
+  rechit_cell_v_.push_back(cell.second);
+  rechit_detid_.push_back(detid);
+  rechit_x_.push_back(position.x());
+  rechit_y_.push_back(position.y());
+  rechit_z_.push_back(position.z());
+  rechit_time_.push_back(hit->time());
+  rechit_thickness_.push_back(cellThickness);
+  rechit_isHalf_.push_back(isHalfCell);
+  rechit_flags_.push_back(flags);
+  rechit_cluster2d_.push_back(cluster_index_);
+  rechit_radius_.push_back(radius);
+
+  storedRecHits_.insert(detid);
+  detIdToRecHitIndexMap_[detid] = rechit_index_;
+  ++rechit_index_;
+}
+
+void HGCalAnalysis::fillSimHit(const DetId &detid, const float &fraction, const unsigned int &layer) {
+  int flags = 0x0;
+  if (fraction > 0. && fraction < 1.)
+    flags = 0x1;
+  else if (fraction < 0.)
+    flags = 0x3;
+  else if (fraction == 0.)
+    flags = 0x2;
+  const PCaloHit *hit = simhitmap_[detid];
+  const GlobalPoint position = recHitTools_.getPosition(detid);
+  std::pair<int, int> wafer;
+  std::pair<int, int> cell;
+
+  if (detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) {
+    wafer = recHitTools_.getWafer(detid);
+    cell = recHitTools_.getCell(detid);
+  }
+  else {
+    wafer = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
+    cell = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
+  }
+  const double cellThickness =
+      ((detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) ? recHitTools_.getSiThickness(detid)
+                                            : std::numeric_limits<std::float_t>::max());
+  const bool isHalfCell = recHitTools_.isHalfCell(detid);
+  const double eta = recHitTools_.getEta(position);
+  const double phi = recHitTools_.getPhi(position);
+  const double pt = recHitTools_.getPt(position, hit->energy());
+  const double radius =
+      ((detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) ? recHitTools_.getRadiusToSide(detid) : -1.);
+
   // fill the vectors
   rechit_eta_.push_back(eta);
   rechit_phi_.push_back(phi);
