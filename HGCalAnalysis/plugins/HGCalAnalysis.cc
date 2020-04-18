@@ -173,6 +173,8 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   virtual void endJob() override;
   virtual int fillLayerCluster(const edm::Ptr<reco::CaloCluster> &layerCluster,
                                const bool &fillRecHits, const int &multiClusterIndex = -1);
+  virtual void fillSimHit(const DetId &detid, const float &fraction, const unsigned int &layer);
+
   virtual void fillRecHit(const DetId &detid, const float &fraction, const unsigned int &layer,
                           const int &cluster_index_ = -1);
 
@@ -1322,13 +1324,13 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       const auto &simhitsFH = *simHitHandleFH;
       const auto &simhitsBH = *simHitHandleBH;
       for (unsigned int i = 0; i < simhitsEE.size(); ++i) {
-        simhitmap_[simhitsEE[i].detid()] = &simhitsEE[i];
+        simhitmap_[simhitsEE[i].detId()] = &simhitsEE[i];
       }
       for (unsigned int i = 0; i < simhitsFH.size(); ++i) {
-        simhitmap_[simhitsFH[i].detid()] = &simhitsFH[i];
+        simhitmap_[simhitsFH[i].detId()] = &simhitsFH[i];
       }
       for (unsigned int i = 0; i < simhitsBH.size(); ++i) {
-        simhitmap_[simhitsBH[i].detid()] = &simhitsBH[i];
+        simhitmap_[simhitsBH[i].detId()] = &simhitsBH[i];
       }
 
       break;
@@ -1343,7 +1345,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       iEvent.getByToken(simHitsEE_, simHitHandleEE);
       const auto &simhitsEE = *simHitHandleEE;
       for (unsigned int i = 0; i < simhitsEE.size(); ++i) {
-        simhitmap_[simhitsEE[i].detid()] = &simhitsEE[i];
+        simhitmap_[simhitsEE[i].detId()] = &simhitsEE[i];
       }
       break;
     }
@@ -1364,10 +1366,10 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       const auto &simhitsFH = *simHitHandleFH;
       const auto &simhitsBH = *simHitHandleBH;
       for (unsigned int i = 0; i < simhitsFH.size(); ++i) {
-        simhitmap_[simhitsFH[i].detid()] = &simhitsFH[i];
+        simhitmap_[simhitsFH[i].detId()] = &simhitsFH[i];
       }
       for (unsigned int i = 0; i < simhitsBH.size(); ++i) {
-        simhitmap_[simhitsBH[i].detid()] = &simhitsBH[i];
+        simhitmap_[simhitsBH[i].detId()] = &simhitsBH[i];
       }
       break;
     }
@@ -1530,7 +1532,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       // loop over EE SimHits
       for (std::vector<PCaloHit>::const_iterator it_hit = simhitsEE.begin(); it_hit < simhitsEE.end();
            ++it_hit) {
-        const HGCalDetId detid = it_hit->detid();
+        const HGCalDetId detid = it_hit->detId();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
         if (storedSimHits_.find(detid) == storedSimHits_.end()) {
@@ -1543,7 +1545,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       // loop over FH SimHits
       for (std::vector<PCaloHit>::const_iterator it_hit = simhitsFH.begin(); it_hit < simhitsFH.end();
            ++it_hit) {
-        const HGCalDetId detid = it_hit->detid();
+        const HGCalDetId detid = it_hit->detId();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
         if (storedSimHits_.find(detid) == storedSimHits_.end()) {
@@ -1554,7 +1556,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       // loop over BH SimHits
       for (std::vector<PCaloHit>::const_iterator it_hit = simhitsBH.begin(); it_hit < simhitsBH.end();
            ++it_hit) {
-        const HGCalDetId detid = it_hit->detid();
+        const HGCalDetId detid = it_hit->detId();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
         if (storedSimHits_.find(detid) == storedSimHits_.end()) {
