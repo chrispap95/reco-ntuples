@@ -917,11 +917,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       break;
   }
 
-  const reco::CaloClusterCollection &clusters = *clusterHandle;
-  unsigned int nclus = clusters.size();
-  cluster_index_ = 0;
   rechit_index_ = 0;
-  storedLayerClusters_.clear();
   storedRecHits_.clear();
   storedSimHits_.clear();
 
