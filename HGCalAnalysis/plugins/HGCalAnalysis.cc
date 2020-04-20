@@ -911,6 +911,24 @@ void HGCalAnalysis::clearVariables() {
   gen_daughters_.clear();
 
   ////////////////////
+  // SimHits
+  // associated to layer clusters
+  simhit_eta_.clear();
+  simhit_phi_.clear();
+  simhit_energy_.clear();
+  simhit_x_.clear();
+  simhit_y_.clear();
+  simhit_z_.clear();
+  simhit_layer_.clear();
+  simhit_wafer_u_.clear();
+  simhit_wafer_v_.clear();
+  simhit_cell_u_.clear();
+  simhit_cell_v_.clear();
+  simhit_detid_.clear();
+  simhit_isHalf_.clear();
+  simhit_flags_.clear();
+
+  ////////////////////
   // RecHits
   // associated to layer clusters
   rechit_eta_.clear();
