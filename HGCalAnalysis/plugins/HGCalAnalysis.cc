@@ -879,6 +879,24 @@ void HGCalAnalysis::clearVariables() {
   detIdToRecHitIndexMap_.clear();
 
   ////////////////////
+  // SimHits
+  // associated to layer clusters
+  simhit_eta_.clear();
+  simhit_phi_.clear();
+  simhit_energy_.clear();
+  simhit_x_.clear();
+  simhit_y_.clear();
+  simhit_z_.clear();
+  simhit_layer_.clear();
+  simhit_wafer_u_.clear();
+  simhit_wafer_v_.clear();
+  simhit_cell_u_.clear();
+  simhit_cell_v_.clear();
+  simhit_detid_.clear();
+  simhit_isHalf_.clear();
+  simhit_flags_.clear();
+
+  ////////////////////
   // layer clusters
   //
   cluster2d_eta_.clear();
@@ -1237,7 +1255,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
   // make a map detid-rechit
   hitmap_.clear();
   hfhitmap_.clear();
-  
+
   switch (algo_) {
     case 1: {
       iEvent.getByToken(recHitsEE_, recHitHandleEE);
@@ -1404,7 +1422,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         }
       }
 
-      const HFRecHitCollection &rechitsHF = *recHitHandleHF;     
+      const HFRecHitCollection &rechitsHF = *recHitHandleHF;
        // loop over HF RecHits
       for (HFRecHitCollection::const_iterator it_hit = rechitsHF.begin(); it_hit < rechitsHF.end();
            ++it_hit) {
@@ -1417,7 +1435,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
     }
 
     if (algo_ == 5) {
-      const HFRecHitCollection &rechitsHF = *recHitHandleHF;     
+      const HFRecHitCollection &rechitsHF = *recHitHandleHF;
        // loop over HF RecHits
       for (HFRecHitCollection::const_iterator it_hit = rechitsHF.begin(); it_hit < rechitsHF.end();
            ++it_hit) {
@@ -1568,7 +1586,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
       }
       pfclusterFromMultiCl_rechits_.push_back(rechits_indices);
     }  // end loop over pfClusters From MultiClusters
-  
+
 
     // Loop over Ecal Driven Gsf Electrons From MultiClusters
     if (storeElectrons_) {
@@ -1961,14 +1979,14 @@ void HGCalAnalysis::fillRecHitHF(const DetId &detid, const float &fraction, cons
   cell  = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
 
   const double cellThickness = std::numeric_limits<std::float_t>::max();
-  
+
   const bool isHalfCell = recHitTools_.isHalfCell(detid);
 
   const double eta = recHitTools_.getEta(position);
   const double phi = recHitTools_.getPhi(position);
   const double pt = recHitTools_.getPt(position, hit->energy());
   const double radius = sqrt(position.x()*position.x() + position.y()*position.y());
-  
+
   // fill the vectors
   rechit_eta_.push_back(eta);
   rechit_phi_.push_back(phi);
