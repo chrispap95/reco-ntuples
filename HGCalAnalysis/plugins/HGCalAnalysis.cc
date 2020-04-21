@@ -211,7 +211,6 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   edm::EDGetTokenT<std::vector<reco::GenParticle> > genParticles_;
   edm::EDGetTokenT<edm::HepMCProduct> hev_;
   edm::EDGetTokenT<std::vector<reco::Track>> tracks_;
-  edm::EDGetTokenT<std::vector<reco::Vertex>> vertices_;
 
   TTree *t_;
 
@@ -409,7 +408,6 @@ HGCalAnalysis::HGCalAnalysis(const edm::ParameterSet &iConfig)
   }
 
   tracks_ = consumes<std::vector<reco::Track>>(edm::InputTag("generalTracks"));
-  vertices_ = consumes<std::vector<reco::Vertex>>(edm::InputTag("offlinePrimaryVertices"));
 
   usesResource(TFileService::kSharedResource);
   edm::Service<TFileService> fs;
@@ -672,10 +670,6 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
 
   iEvent.getByToken(tracks_, trackHandle);
   const std::vector<reco::Track> &tracks = *trackHandle;
-
-  Handle<std::vector<reco::Vertex>> verticesHandle;
-  iEvent.getByToken(vertices_, verticesHandle);
-  auto const &vertices = *verticesHandle;
 
   HepMC::GenVertex *primaryVertex = *(hevH)->GetEvent()->vertices_begin();
   float vx_ = primaryVertex->position().x() / 10.;  // to put in official units
