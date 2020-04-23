@@ -1555,9 +1555,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
-          fillSimHit(detid, -1, layer);
-        }
+        fillSimHit(detid, -1, layer);
       }
     }
     if (algo_ == 1 || algo_ == 3) {
@@ -1568,9 +1566,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
-          fillSimHit(detid, -1, layer);
-        }
+        fillSimHit(detid, -1, layer);
       }
       const std::vector<PCaloHit> &simhitsBH = *simHitHandleBH;
       // loop over BH SimHits
@@ -1579,9 +1575,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        if (storedSimHits_.find(detid) == storedSimHits_.end()) {
-          fillSimHit(detid, -1, layer);
-        }
+        fillSimHit(detid, -1, layer);
       }
     }
   }
