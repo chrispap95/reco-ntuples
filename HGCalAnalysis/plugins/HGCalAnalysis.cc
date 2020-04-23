@@ -173,7 +173,7 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   virtual void endJob() override;
   virtual int fillLayerCluster(const edm::Ptr<reco::CaloCluster> &layerCluster,
                                const bool &fillRecHits, const int &multiClusterIndex = -1);
-  virtual void fillSimHit(const DetId &detid, const float &fraction, const unsigned int &layer);
+  virtual void fillSimHit(const DetId &detid, const float energy, const float &fraction, const unsigned int &layer);
 
   virtual void fillRecHit(const DetId &detid, const float &fraction, const unsigned int &layer,
                           const int &cluster_index_ = -1);
@@ -488,7 +488,7 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   unsigned int simhit_index_;
   std::map<DetId, const HGCRecHit *> hitmap_;
   std::map<DetId, const HFRecHit *> hfhitmap_;
-  std::map<DetId, const PCaloHit *> simhitmap_;
+  std::multimap<DetId, const PCaloHit *> simhitmap_;
 
   std::map<DetId, unsigned int> detIdToRecHitIndexMap_;
   std::map<DetId, unsigned int> detIdToSimHitIndexMap_;
@@ -1555,7 +1555,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        fillSimHit(detid, -1, layer);
+        fillSimHit(detid, it_hit->energy(), -1, layer);
       }
     }
     if (algo_ == 1 || algo_ == 3) {
@@ -1566,7 +1566,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        fillSimHit(detid, -1, layer);
+        fillSimHit(detid, it_hit->energy(), -1, layer);
       }
       const std::vector<PCaloHit> &simhitsBH = *simHitHandleBH;
       // loop over BH SimHits
@@ -1575,7 +1575,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
         const HGCalDetId detid = it_hit->id();
         unsigned int layer = recHitTools_.getLayerWithOffset(detid);
 
-        fillSimHit(detid, -1, layer);
+        fillSimHit(detid, it_hit->energy(), -1, layer);
       }
     }
   }
@@ -2145,7 +2145,7 @@ void HGCalAnalysis::fillRecHitHF(const DetId &detid, const float &fraction, cons
   ++rechit_index_;
 }
 
-void HGCalAnalysis::fillSimHit(const DetId &detid, const float &fraction, const unsigned int &layer) {
+void HGCalAnalysis::fillSimHit(const DetId &detid, const float &energy, const float &fraction, const unsigned int &layer) {
   int flags = 0x0;
   if (fraction > 0. && fraction < 1.)
     flags = 0x1;
@@ -2173,7 +2173,7 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &fraction, const 
   // fill the vectors
   simhit_eta_.push_back(eta);
   simhit_phi_.push_back(phi);
-  simhit_energy_.push_back(hit->energy());
+  simhit_energy_.push_back(energy;
   simhit_layer_.push_back(layer);
   simhit_wafer_u_.push_back(wafer.first);
   simhit_wafer_v_.push_back(wafer.second);
