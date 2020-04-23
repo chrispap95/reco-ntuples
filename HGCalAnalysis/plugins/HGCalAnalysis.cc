@@ -2153,7 +2153,6 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &energy, const fl
     flags = 0x3;
   else if (fraction == 0.)
     flags = 0x2;
-  const PCaloHit *hit = simhitmap_[detid];
   const GlobalPoint position = recHitTools_.getPosition(detid);
   std::pair<int, int> wafer;
   std::pair<int, int> cell;
