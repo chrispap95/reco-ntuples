@@ -4,7 +4,7 @@ from Configuration.StandardSequences.Eras import eras
 process = cms.Process("Demo")
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
-process.load('Configuration.Geometry.GeometryExtended2026D41Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D54Reco_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load("FWCore.MessageService.MessageLogger_cfi")
@@ -15,7 +15,7 @@ except Exception: # ConfigFileReadError in case config does not exist
     process.load('SimCalorimetry.HGCalSimProducers.hgcalDigitizer_cfi')
     process.load('RecoLocalCalo.HGCalRecProducers.hgcalLayerClusters_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T19', '')
 from FastSimulation.Event.ParticleFilter_cfi import *
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
@@ -23,7 +23,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 process.source = cms.Source("PoolSource",
     # replace 'step3.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        '/store/cmst3/group/hgcal/CMG_studies/validation/step3.root'
+        'file:step3.root'
     ),
     duplicateCheckMode = cms.untracked.string("noDuplicateCheck")
 )
@@ -32,6 +32,7 @@ process.ana = cms.EDAnalyzer('HGCalAnalysis',
                              detector = cms.string("all"),
                              inputTag_HGCalMultiCluster = cms.string("hgcalMultiClusters"),
                              rawRecHits = cms.bool(True),
+                             rawSimHits = cms.bool(True),
                              verbose = cms.bool(True),
                              readCaloParticles = cms.bool(True),
                              storeGenParticleOrigin = cms.bool(True),
