@@ -488,7 +488,7 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   unsigned int simhit_index_;
   std::map<DetId, const HGCRecHit *> hitmap_;
   std::map<DetId, const HFRecHit *> hfhitmap_;
-  std::multimap<DetId, const PCaloHit *> simhitmap_;
+  std::map<DetId, const PCaloHit *> simhitmap_;
 
   std::map<DetId, unsigned int> detIdToRecHitIndexMap_;
   std::map<DetId, unsigned int> detIdToSimHitIndexMap_;
