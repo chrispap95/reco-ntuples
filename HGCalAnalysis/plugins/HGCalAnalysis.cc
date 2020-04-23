@@ -173,7 +173,7 @@ class HGCalAnalysis : public edm::one::EDAnalyzer<edm::one::WatchRuns, edm::one:
   virtual void endJob() override;
   virtual int fillLayerCluster(const edm::Ptr<reco::CaloCluster> &layerCluster,
                                const bool &fillRecHits, const int &multiClusterIndex = -1);
-  virtual void fillSimHit(const DetId &detid, const float energy, const float &fraction, const unsigned int &layer);
+  virtual void fillSimHit(const DetId &detid, const float &energy, const float &fraction, const unsigned int &layer);
 
   virtual void fillRecHit(const DetId &detid, const float &fraction, const unsigned int &layer,
                           const int &cluster_index_ = -1);
