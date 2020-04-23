@@ -927,6 +927,7 @@ void HGCalAnalysis::clearVariables() {
   simhit_detid_.clear();
   simhit_isHalf_.clear();
   simhit_flags_.clear();
+  detIdToSimHitIndexMap_.clear();
 
   ////////////////////
   // RecHits
@@ -1422,6 +1423,7 @@ void HGCalAnalysis::analyze(const edm::Event &iEvent, const edm::EventSetup &iSe
   rechit_index_ = 0;
   storedLayerClusters_.clear();
   storedRecHits_.clear();
+  storedSimHits_.clear();
 
   if (algo_ < 4){
     for (unsigned int i = 0; i < multiClusters.size(); i++) {
@@ -2190,8 +2192,8 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &fraction, const 
   simhit_isHalf_.push_back(isHalfCell);
   simhit_flags_.push_back(flags);
 
-  storedRecHits_.insert(detid);
-  detIdToRecHitIndexMap_[detid] = rechit_index_;
+  storedSimHits_.insert(detid);
+  detIdToSimHitIndexMap_[detid] = rechit_index_;
   ++rechit_index_;
 }
 
