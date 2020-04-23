@@ -2173,7 +2173,7 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &energy, const fl
   // fill the vectors
   simhit_eta_.push_back(eta);
   simhit_phi_.push_back(phi);
-  simhit_energy_.push_back(energy;
+  simhit_energy_.push_back(energy);
   simhit_layer_.push_back(layer);
   simhit_wafer_u_.push_back(wafer.first);
   simhit_wafer_v_.push_back(wafer.second);
