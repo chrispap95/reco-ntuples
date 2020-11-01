@@ -1941,7 +1941,7 @@ void HGCalAnalysis::beginRun(edm::Run const &iEvent, edm::EventSetup const &es) 
   mySimEvent_->initializePdt(&(*pdt));
 
   edm::ESHandle<CaloGeometry> geom;
-  es.get<CaloGeometryRecord>().get(geom)
+  es.get<CaloGeometryRecord>().get(geom);
   recHitTools_.setGeometry(*geom);
   retrieveLayerPositions(es, recHitTools_.lastLayerBH());
 
@@ -1963,7 +1963,9 @@ void HGCalAnalysis::endJob() {}
 // --------------------------------------------------
 
 void HGCalAnalysis::retrieveLayerPositions(const edm::EventSetup &es, unsigned layers) {
-  recHitTools_.getEventSetup(es);
+  edm::ESHandle<CaloGeometry> geom;
+  es.get<CaloGeometryRecord>().get(geom);
+  recHitTools_.setGeometry(*geom);
 
   for (unsigned ilayer = 1; ilayer <= layers; ++ilayer) {
     const GlobalPoint pos = recHitTools_.getPositionLayer(ilayer);
