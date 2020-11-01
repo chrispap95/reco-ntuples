@@ -1940,7 +1940,9 @@ void HGCalAnalysis::beginRun(edm::Run const &iEvent, edm::EventSetup const &es) 
   es.getData(pdt);
   mySimEvent_->initializePdt(&(*pdt));
 
-  recHitTools_.getEventSetup(es);
+  edm::ESHandle<CaloGeometry> geom;
+  es.get<CaloGeometryRecord>().get(geom)
+  recHitTools_.setGeometry(*geom);
   retrieveLayerPositions(es, recHitTools_.lastLayerBH());
 
   edm::ESHandle<MagneticField> magfield;
