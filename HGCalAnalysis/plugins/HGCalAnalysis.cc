@@ -2059,6 +2059,11 @@ void HGCalAnalysis::fillRecHit(const DetId &detid, const float &fraction, const 
     wafer = recHitTools_.getWafer(detid);
     cell = recHitTools_.getCell(detid);
   }
+  else if (detid.det() == DetId::HGCalHSc){
+    const HGCScintillatorDetId detidScint = HGCScintillatorDetId(detid);
+    wafer = std::pair<int, int>(detidScint.ieta(), detidScint.iphi());
+    cell = std::pair<int, int>(detidScint.ieta(), detidScint.iphi());
+  }
   else {
     wafer = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
     cell = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
@@ -2164,6 +2169,11 @@ void HGCalAnalysis::fillSimHit(const DetId &detid, const float &energy, const fl
   if (detid.det() == DetId::Forward || detid.det() == DetId::HGCalEE || detid.det() == DetId::HGCalHSi) {
     wafer = recHitTools_.getWafer(detid);
     cell = recHitTools_.getCell(detid);
+  }
+  else if (detid.det() == DetId::HGCalHSc){
+    const HGCScintillatorDetId detidScint = HGCScintillatorDetId(detid);
+    wafer = std::pair<int, int>(detidScint.ieta(), detidScint.iphi());
+    cell = std::pair<int, int>(detidScint.ieta(), detidScint.iphi());
   }
   else {
     wafer = std::pair<int, int>(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max());
